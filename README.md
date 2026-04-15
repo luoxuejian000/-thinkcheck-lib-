@@ -2,10 +2,10 @@
 
 谐振理论LLM推理监控框架 - 自动检测AI推理质量下降并触发回溯
 
-![Python Version](https://img.shields.io/badge/python-3.7+-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
-![GitHub Issues](https://img.shields.io/github/issues/luoxuejian000/thinkcheck-lib)
-![GitHub Stars](https://img.shields.io/github/stars/luoxuejian000/thinkcheck-lib)
+[![Python Version](https://img.shields.io/badge/python-3.7+-blue)](https://www.python.org/)
+[![License](https://img.shields.io/badge/license-MIT-green)](https://opensource.org/licenses/MIT)
+[![GitHub Issues](https://img.shields.io/github/issues/luoxuejian000/thinkcheck-lib)](https://github.com/luoxuejian000/thinkcheck-lib/issues)
+[![GitHub Stars](https://img.shields.io/github/stars/luoxuejian000/thinkcheck-lib)](https://github.com/luoxuejian000/thinkcheck-lib)
 
 ## ✨ 特性
 - 实时监控LLM推理和谐度
