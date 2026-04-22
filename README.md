@@ -23,6 +23,18 @@ bash
 pip install git+https://github.com/luoxuejian000/thinkcheck-lib.git
 
 
+## 已知问题与改进计划
+
+当前 2.0 版本是一个**概念验证（PoC）**，存在以下已知局限，我们正在积极改进中：
+
+| 问题 | 状态 | 计划版本 |
+| :--- | :--- | :--- |
+| 包结构与导入路径未完全对齐 | 🔴 修复中 | v2.0.1 |
+| A指标可能误伤正常转折词 | 🟡 调研中 | v2.1.0 |
+| U/D指标存在启发式偏差 | 🟡 调研中 | v3.0 |
+
+欢迎通过 [Issues](https://github.com/luoxuejian000/-thinkcheck-lib-/issues) 提交反馈或参与讨论。
+
 ### 基本使用
 python
 from thinkcheck import thinkcheck
