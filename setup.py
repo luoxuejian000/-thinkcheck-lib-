@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="thinkcheck-legal",
-    version="2.0.0",
+    version="2.0.1",
     packages=find_packages(include=["thinkcheck_legal", "thinkcheck_legal.*"]),
     install_requires=[
         "sentence-transformers>=2.2.0",

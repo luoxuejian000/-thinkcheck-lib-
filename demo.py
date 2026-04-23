@@ -3,7 +3,7 @@
 展示谐振评估器对概念漂移的检测能力，体现压力测试原则
 """
 # 直接导入同目录下的模块
-from legal_monitor import StandaloneLegalMonitor
+from thinkcheck_legal.legal_monitor import StandaloneLegalMonitor
 
 # 正常法律推理（概念使用一致）
 normal_text = """

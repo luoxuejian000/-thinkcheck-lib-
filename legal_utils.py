@@ -7,7 +7,7 @@ import numpy as np
 from typing import List, Tuple, Dict, Set
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
-import legal_config as config
+from . import legal_config as config
 
 # 全局嵌入模型（懒加载）
 _model = None

@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "thinkcheck-legal"
+version = "2.0.1"
+description = "法律推理谐振评估工具 - 基于晶脉哲学"
+authors = [{name = "李广好"}]
+dependencies = [
+    "sentence-transformers>=2.2.0",
+    "scikit-learn>=1.0.0",
+    "numpy>=1.20.0",
+]
+requires-python = ">=3.8"
+license = {text = "MIT"}
+readme = "README.md"
+
+[tool.setuptools]
+packages = ["thinkcheck_legal"]

@@ -13,8 +13,8 @@ try:
 except ImportError:
     BASE_CLASS = object
 
-from legal_utils import compute_harmony
-from legal_config import DEFAULT_LAMBDA_U, DEFAULT_LAMBDA_D, DEFAULT_LAMBDA_A
+from .legal_utils import compute_harmony
+from .legal_config import DEFAULT_LAMBDA_U, DEFAULT_LAMBDA_D, DEFAULT_LAMBDA_A
 
 
 class LegalReasoningMonitor(BASE_CLASS):
