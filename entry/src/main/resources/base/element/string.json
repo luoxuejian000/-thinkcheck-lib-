@@ -1,0 +1,10 @@
+{
+  "string": [
+    { "name": "module_desc", "value": "ThinkCheck 4.0 鸿蒙AI推理诊断引擎（竞赛版）" },
+    { "name": "EntryAbility_desc", "value": "AI推理诊断主入口 - 基于晶脉谐振理论" },
+    { "name": "EntryAbility_label", "value": "ThinkCheck 4.0" },
+    { "name": "app_name", "value": "ThinkCheck 4.0" },
+    { "name": "internet_reason", "value": "需要网络权限用于云端后备诊断服务" },
+    { "name": "distributed_reason", "value": "需要分布式权限用于跨设备诊断报告流转" }
+  ]
+}

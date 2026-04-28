@@ -1,0 +1,12 @@
+{
+  "apiType": "stageMode",
+  "buildOption": {},
+  "modelVersion": "6.0.0",
+  "targets": [
+    {
+      "name": "default",
+      "runtimeOS": "HarmonyOS",
+      "applyToProducts": ["default"]
+    }
+  ]
+}
