@@ -18,6 +18,16 @@ class ReasoningStep:
     h_score: float
     timestamp: datetime
     metadata: Dict[str, Any] = field(default_factory=dict)
+    is_backtrack_trigger: bool = False  # 新增：标记是否触发了回溯
+
+
+# 多语言否定词支持
+NEGATION_WORDS = {
+    'zh': {"不", "没有", "无", "非", "否", "别", "没", "不要", "不能", "不会"},
+    'en': {"no", "not", "never", "none", "nothing", "nobody", "nowhere", "neither", "nor"},
+    'ja': {"ない", "ません", "ず", "ぬ", "ん"},
+    'ko': {"아니", "않", "없", "못", "말"},
+}
 
 class HarmonicMonitor:
     """和谐度监控器"""
@@ -25,7 +35,9 @@ class HarmonicMonitor:
     def __init__(self, 
                  h_threshold: float = 0.3,
                  lookback_window: int = 3,
-                 verbose: bool = True):
+                 verbose: bool = True,
+                 language: str = 'zh',  # 新增：语言支持
+                 consecutive_low_threshold: int = 1):  # 保持兼容默认1次触发
         """
         初始化监控器
         
@@ -33,12 +45,17 @@ class HarmonicMonitor:
         h_threshold: 和谐度阈值，低于此值触发警告
         lookback_window: 回溯窗口大小
         verbose: 是否打印详细信息
+        language: 语言支持，默认中文，可选'en','zh','ja','ko'
+        consecutive_low_threshold: 连续多少次低H才触发回溯（默认1，保持兼容性）
         """
         self.h_threshold = h_threshold
         self.lookback_window = lookback_window
         self.verbose = verbose
+        self.language = language
+        self.consecutive_low_threshold = consecutive_low_threshold
         self.history: List[ReasoningStep] = []
         self.step_counter = 0
+        self.consecutive_low_h = 0
         
     def add_step(self, content: str, metadata: Optional[Dict] = None) -> Tuple[float, bool]:
         """
@@ -49,9 +66,9 @@ class HarmonicMonitor:
         """
         self.step_counter += 1
         
-        # 计算和谐度
+        # 计算和谐度（传递language参数）
         previous_contents = [step.content for step in self.history[-self.lookback_window:]]
-        h_score = calculate_h_score(previous_contents, content)
+        h_score = calculate_h_score(previous_contents, content, language=self.language)
         
         # 创建步骤记录
         step = ReasoningStep(
@@ -62,31 +79,42 @@ class HarmonicMonitor:
             metadata=metadata or {}
         )
         
-        # 添加到历史
+        # 添加到历史（兼容旧版）
         self.history.append(step)
         
-        # 检查是否需要回溯
-        needs_backtrack = self._check_backtrack_needed()
+        # 检查是否需要回溯（两种方式都兼容）
+        needs_backtrack = self._check_backtrack_needed(h_score)
+        step.is_backtrack_trigger = needs_backtrack
         
         if self.verbose:
             status = "需要回溯" if needs_backtrack else "正常"
             print(f"[Step {self.step_counter}] H={h_score:.2f} {status} | {content[:50]}...")
             
             if needs_backtrack:
-                print(f"    原因：和谐度低于阈值 {h_score:.2f} < {self.h_threshold}")
+                # 保持兼容旧消息
+                if self.consecutive_low_h >= 1 and self.consecutive_low_threshold == 1:
+                    print(f"    原因：和谐度低于阈值 {h_score:.2f} < {self.h_threshold}")
+                else:
+                    print(f"    原因：{self._get_backtrack_reason()}")
         
         return h_score, needs_backtrack
     
-    def _check_backtrack_needed(self) -> bool:
-        """检查是否需要回溯"""
+    def _check_backtrack_needed(self, current_h: Optional[float] = None) -> bool:
+        """检查是否需要回溯（保持向后兼容）"""
         if not self.history:
             return False
         
-        current_step = self.history[-1]
+        # 如果没有传入current_h（向后兼容旧版调用方式），则从历史中获取
+        if current_h is None:
+            current_h = self.history[-1].h_score
         
-        # 规则1：当前H值低于阈值
-        if current_step.h_score < self.h_threshold:
-            return True
+        # 规则1：连续低H值
+        if current_h < self.h_threshold:
+            self.consecutive_low_h += 1
+            if self.consecutive_low_h >= self.consecutive_low_threshold:
+                return True
+        else:
+            self.consecutive_low_h = 0
         
         # 规则2：最近几步连续下降
         recent_steps = self.history[-min(self.lookback_window, len(self.history)):]
@@ -98,6 +126,12 @@ class HarmonicMonitor:
                 return True
         
         return False
+    
+    def _get_backtrack_reason(self) -> str:
+        """获取回溯原因"""
+        if self.consecutive_low_h >= self.consecutive_low_threshold:
+            return f"连续{self.consecutive_low_h}次和谐度低于阈值"
+        return "推理质量呈下降趋势"
     
     def get_summary(self) -> Dict[str, Any]:
         """获取监控摘要"""
@@ -112,6 +146,7 @@ class HarmonicMonitor:
             "min_h": min(h_scores),
             "max_h": max(h_scores),
             "low_h_steps": sum(1 for h in h_scores if h < self.h_threshold),
+            "backtrack_triggers": sum(1 for step in self.history if step.is_backtrack_trigger),
             "last_h": h_scores[-1],
             "status": "healthy" if h_scores[-1] >= self.h_threshold else "needs_attention"
         }
@@ -120,9 +155,11 @@ class HarmonicMonitor:
         """清空历史记录"""
         self.history.clear()
         self.step_counter = 0
+        self.consecutive_low_h = 0
 
 def calculate_h_score(history: List[str], current_text: str, 
-                     weights: Optional[Dict[str, float]] = None) -> float:
+                     weights: Optional[Dict[str, float]] = None,
+                     language: str = 'zh') -> float:  # 新增：language参数
     """
     计算和谐度H = w_u*U + w_d*D - w_a*A
     
@@ -130,6 +167,7 @@ def calculate_h_score(history: List[str], current_text: str,
     history: 历史文本列表
     current_text: 当前文本
     weights: 权重字典，默认{"U": 0.4, "D": 0.4, "A": 0.2}
+    language: 语言，用于否定词检测
     
     返回：
     和谐度H (0-1)
@@ -140,10 +178,14 @@ def calculate_h_score(history: List[str], current_text: str,
     # 设置默认权重
     weights = weights or {"U": 0.4, "D": 0.4, "A": 0.2}
     
-    # 预处理：转换为小写并分词
+    # 预处理：语言特定的分词
     def preprocess(text: str) -> List[str]:
-        # 简单分词，可按需扩展
-        return [word.lower() for word in re.findall(r'\w+', text)]
+        if language == 'zh':
+            # 简单中文处理（实际可用jieba等）
+            return [char.lower() for char in text if char.strip()]
+        else:
+            # 英文等语言
+            return [word.lower() for word in re.findall(r'\w+', text)]
     
     current_words = preprocess(current_text)
     
@@ -191,18 +233,18 @@ def calculate_h_score(history: List[str], current_text: str,
         D = 1 - avg_similarity  # 相似度越低，探索性越高
     
     # 3. 计算对抗性A（重复/矛盾程度）
-    # 3.1 重复性
+    # 3.1 重复性（更严格一点：重复>2次才算）
     word_counts = {}
     for word in current_words:
         word_counts[word] = word_counts.get(word, 0) + 1
     
-    repeated_words = sum(1 for count in word_counts.values() if count > 1)
+    repeated_words = sum(1 for count in word_counts.values() if count > 2)
     repetition_score = repeated_words / len(current_words) if current_words else 0
     
-    # 3.2 矛盾检测（简单版：检查否定词）
-    negation_words = {"不", "没有", "无", "非", "否", "别"}
+    # 3.2 矛盾检测（多语言支持）
+    negation_words = NEGATION_WORDS.get(language, set())
     negation_count = sum(1 for word in current_words if word in negation_words)
-    contradiction_score = min(negation_count * 0.1, 1.0)  # 每个否定词增加0.1
+    contradiction_score = min(negation_count * 0.08, 1.0)  # 稍微调低一点权重
     
     A = 0.7 * repetition_score + 0.3 * contradiction_score
     
@@ -214,4 +256,4 @@ def calculate_h_score(history: List[str], current_text: str,
     
     return round(H, 3)
 
-__all__ = ["HarmonicMonitor", "calculate_h_score", "ReasoningStep"]
+__all__ = ["HarmonicMonitor", "calculate_h_score", "ReasoningStep", "NEGATION_WORDS"]

@@ -30,17 +30,24 @@ class RetryBacktrack(BacktrackStrategy):
     
     def __init__(self, max_retries: int = 2):
         self.max_retries = max_retries
+        self.attempt = 0  # 记录尝试次数
     
     def execute(self, func: Callable, args: tuple, kwargs: dict, 
                 history: list, monitor: HarmonicMonitor) -> Any:
         for attempt in range(self.max_retries):
-            # 这里可以修改参数或添加提示
-            # 简化版：直接重新调用
-            result = func(*args, **kwargs)
+            self.attempt = attempt
             
-            # 计算新结果的H值
+            # 修改参数或添加提示（这里是基础版）
+            # 如果有温度等参数，可以在这修改
+            modified_kwargs = kwargs.copy()
+            
+            # 调用函数
+            result = func(*args, **modified_kwargs)
+            
+            # 计算新结果的H值（传递monitor的language）
             if history:
-                h_score = calculate_h_score([history[-1]], result)
+                h_score = calculate_h_score([history[-1]], result, 
+                                           language=monitor.language if hasattr(monitor, 'language') else 'zh')
                 if h_score >= monitor.h_threshold:
                     return result
             
@@ -51,7 +58,9 @@ class RetryBacktrack(BacktrackStrategy):
 def thinkcheck(h_threshold: float = 0.3, 
                max_backtracks: int = 2,
                backtrack_strategy: str = "simple",
-               verbose: bool = True):
+               verbose: bool = True,
+               language: str = 'zh',  # 新增：语言支持
+               consecutive_low_threshold: int = 1):  # 新增：连续阈值
     """
     ThinkCheck装饰器工厂函数
     
@@ -60,15 +69,19 @@ def thinkcheck(h_threshold: float = 0.3,
     max_backtracks: 最大回溯次数
     backtrack_strategy: 回溯策略，可选"simple"或"retry"
     verbose: 是否打印详细信息
+    language: 语言支持，默认中文
+    consecutive_low_threshold: 连续多少次低H才触发回溯（默认1，保持兼容性）
     """
     
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         def wrapper(*args, **kwargs) -> Any:
-            # 初始化监控器
+            # 初始化监控器（传递新参数）
             monitor = HarmonicMonitor(
                 h_threshold=h_threshold,
-                verbose=verbose
+                verbose=verbose,
+                language=language,
+                consecutive_low_threshold=consecutive_low_threshold
             )
             
             # 选择回溯策略
