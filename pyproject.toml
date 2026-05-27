@@ -3,52 +3,15 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "thinkcheck"
-version = "2.0.1"
-description = "谐振理论LLM推理监控框架 - 自动检测AI推理质量下降并触发回溯"
-readme = "README.md"
+name = "thinkcheck-harmony"
+version = "3.0.0"
+description = "通用谐振评估与调谐SDK - 基于晶脉哲学"
+authors = [{name = "李广好"}]
 license = {text = "MIT"}
-requires-python = ">=3.7"
-authors = [
-    {name = "ThinkCheck Team", email = "thinkcheck@example.com"}
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "sentence-transformers>=2.2.0",
+    "scikit-learn>=1.0.0",
+    "numpy>=1.20.0",
 ]
-keywords = ["llm", "reasoning", "monitoring", "ai", "harmonic", "quality"]
-classifiers = [
-    "Development Status :: 4 - Beta",
-    "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Topic :: Software Development :: Libraries :: Python Modules",
-    "Topic :: Scientific/Engineering :: Artificial Intelligence",
-]
-
-dependencies = []
-
-[project.optional-dependencies]
-dev = [
-    "pytest>=7.0.0",
-    "pytest-cov>=4.0.0",
-    "black>=23.0.0",
-    "flake8>=6.0.0",
-    "mypy>=1.0.0",
-]
-
-[project.urls]
-Homepage = "https://github.com/luoxuejian000/thinkcheck-lib"
-Documentation = "https://github.com/luoxuejian000/thinkcheck-lib#readme"
-Repository = "https://github.com/luoxuejian000/thinkcheck-lib"
-Issues = "https://github.com/luoxuejian000/thinkcheck-lib/issues"
-
-[tool.setuptools]
-packages = ["thinkcheck"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-python_files = ["test_*.py"]
-python_classes = ["Test*"]
-python_functions = ["test_*"]

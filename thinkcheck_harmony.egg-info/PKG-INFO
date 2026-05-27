@@ -1,0 +1,18 @@
+Metadata-Version: 2.4
+Name: thinkcheck-harmony
+Version: 3.0.0
+Summary: 通用谐振评估与调谐SDK - 基于晶脉哲学
+Home-page: https://github.com/luoxuejian000/-thinkcheck-lib-
+Author: 李广好
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+License-File: LICENSE
+Requires-Dist: sentence-transformers>=2.2.0
+Requires-Dist: scikit-learn>=1.0.0
+Requires-Dist: numpy>=1.20.0
+Dynamic: author
+Dynamic: classifier
+Dynamic: home-page
+Dynamic: license-file
+Dynamic: requires-dist
+Dynamic: summary
