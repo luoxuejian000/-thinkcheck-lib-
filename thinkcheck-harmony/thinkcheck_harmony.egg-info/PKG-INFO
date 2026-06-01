@@ -1,0 +1,24 @@
+Metadata-Version: 2.1
+Name: thinkcheck-harmony
+Version: 3.0.0
+Summary: 通用谐振评估与调谐SDK - 基于晶脉哲学
+Home-page: https://github.com/luoxuejian000/-thinkcheck-lib-
+Author: 李广好
+License: MIT
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+
+# ThinkCheck Harmony 3.0
+
+> 通用谐振评估与调谐 SDK —— 从诊断到干预的完整闭环
+
+基于晶脉哲学四重公理（关系本体论、矛盾动力论、实践介入论、谐振调谐论）开发的通用推理质量评估框架。
+
+## 快速开始
+```bash
+pip install -e .
+python examples/intervention_demo.py

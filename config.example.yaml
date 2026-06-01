@@ -1,0 +1,41 @@
+# ThinkCheck Agent for Enterprise 配置文件
+agent:
+  name: "ThinkCheck-Agent-Enterprise"
+  version: "1.0.0"
+  log_level: "INFO"
+  log_file: "./logs/agent.log"
+
+deepseek:
+  api_key: "${DEEPSEEK_API_KEY}"
+  base_url: "https://api.deepseek.com/v1"
+  model: "deepseek-chat"
+  max_tokens: 4000
+  temperature: 0.1
+
+thinkcheck:
+  default_domain: "legal"
+  harmony_threshold: 0.7
+  adversarial_threshold: 0.3
+  enable_suggestions: true
+
+ochr:
+  max_retry: 3
+  timeout_seconds: 30
+  boundary_mode: "adaptive"
+
+tools:
+  git:
+    enabled: true
+    auto_commit: false
+    commit_message_prefix: "[Agent Fix] "
+
+workflows:
+  legal_review:
+    enabled: true
+    output_format: "markdown"
+
+performance:
+  max_file_size_mb: 10
+  batch_size: 5
+  cache_enabled: true
+  cache_ttl_seconds: 3600
