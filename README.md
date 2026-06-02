@@ -1,144 +1,139 @@
-# ThinkCheck-lib 🔄
+# ThinkCheck Agent for Enterprise
 
-谐振理论LLM推理监控框架 - 自动检测AI推理质量下降并触发回溯
+> 🧠 基于晶脉哲学与谐振理论的企业级 AI 文档智能调谐系统
 
-[![Python Version](https://img.shields.io/badge/python-3.7+-blue)](https://www.python.org/)
-[![License](https://img.shields.io/badge/license-MIT-green)](https://opensource.org/licenses/MIT)
-[![GitHub Issues](https://img.shields.io/github/issues/luoxuejian000/-thinkcheck-lib-)](https://github.com/luoxuejian000/-thinkcheck-lib-/issues)
-[![GitHub Stars](https://img.shields.io/github/stars/luoxuejian000/-thinkcheck-lib-)](https://github.com/luoxuejian000/-thinkcheck-lib-/stargazers)
-## ✨ 特性
-- 实时监控LLM推理和谐度
-- 自动检测推理质量下降
-- 智能触发回溯机制
-- 轻量级Python库，易于集成
-- 支持主流AI模型接口
-- 基于谐振理论的创新算法
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://python.org)
+[![DeepSeek](https://img.shields.io/badge/LLM-DeepSeek-orange.svg)](https://deepseek.com)
+[![ThinkCheck](https://img.shields.io/badge/ThinkCheck-3.0-purple.svg)](https://github.com/luoxuejian000/-thinkcheck-lib-)
+
+---
+
+## ✨ 项目简介
+
+ThinkCheck Agent for Enterprise 是一个基于**晶脉哲学与谐振理论**的企业级文档智能调谐系统。它能够：
+
+- **自动评估**：对文档进行 U/D/A/H 四维和谐度诊断，精准定位概念漂移、逻辑矛盾等隐蔽缺陷
+- **智能调谐**：集成 DeepSeek 大模型，根据诊断结果自动修复文档问题，实现从“诊断”到“治疗”的闭环
+- **企业集成**：支持 Git 自动化提交、批量处理、详细审计报告等企业级特性
+- **多领域预设**：内置法律、医疗、金融等领域的专业术语库和矛盾规则
+
+---
+
+## 🏗️ 系统架构
+
+```
+用户文档
+    │
+    ▼
+┌─────────────────────────────────────────────┐
+│         ThinkCheck Agent for Enterprise      │
+│                                             │
+│  ┌─────────────┐  ┌─────────────┐           │
+│  │  Document   │  │  Harmony    │           │
+│  │  Evaluator  │──▶  Actuator   │           │
+│  │  (评估器)    │  │  (执行器)    │           │
+│  └─────────────┘  └─────────────┘           │
+│         │                │                   │
+│         ▼                ▼                   │
+│  ┌─────────────────────────────────┐        │
+│  │      OCHR Orchestrator          │        │
+│  │  (评估 → 决策 → 执行 → 验证)     │        │
+│  └─────────────────────────────────┘        │
+└─────────────────────────────────────────────┘
+    │
+    ▼
+调谐后的文档 + 审计报告
+```
+
+---
 
 ## 🚀 快速开始
 
-### 安装
-bash
-直接从GitHub安装
+### 1. 安装依赖
 
-pip install git+https://github.com/luoxuejian000/thinkcheck-lib.git
+```bash
+pip install -r requirements.txt
+```
 
+### 2. 配置 API 密钥
 
-## 已知问题与改进计划
+```bash
+# Windows PowerShell
+$env:DEEPSEEK_API_KEY="your-api-key-here"
 
-当前 2.0 版本是一个**概念验证（PoC）**，存在以下已知局限，我们正在积极改进中：
+# Linux / macOS
+export DEEPSEEK_API_KEY="your-api-key-here"
+```
 
-| 问题 | 状态 | 计划版本 |
-| :--- | :--- | :--- |
-| ~~包结构与导入路径未完全对齐~~ | 🟢 **v2.0.1 已修复** | ~~v2.0.1~~ |
-| A指标可能误伤正常转折词 | 🟡 调研中 | v2.1.0 |
-| U/D指标存在启发式偏差 | 🟡 调研中 | v3.0 |
+### 3. 放置 ThinkCheck SDK
 
-欢迎通过 [Issues](https://github.com/luoxuejian000/-thinkcheck-lib-/issues) 提交反馈或参与讨论。
+将 `thinkcheck_harmony` 文件夹（ThinkCheck 3.0 核心引擎）复制到本项目根目录。
 
-### 基本使用
-python
-from thinkcheck import thinkcheck
+### 4. 运行测试
 
-@thinkcheck(h_threshold=0.4, max_backtracks=2)
-def your_ai_function(prompt):
-    # 您的AI调用代码
-    response = call_your_llm(prompt)
-    return response
+```bash
+python main.py --file your_document.md
+```
 
+您将看到类似以下输出：
 
-## 📖 详细使用
+```
+评估完成。H=0.623, A=0.350, 判定: 需调谐
+调谐完成，策略: 优化术语一致性。
+调谐成功。H: 0.623 → 0.812, 提升: +0.189
+```
 
-### 1. 装饰器模式
-python
-from thinkcheck import thinkcheck_retry
+---
 
-@thinkcheck_retry(h_threshold=0.5, max_backtracks=3)
-def generate_code(task_description):
-    # 您的代码生成逻辑
-    return generated_code
+## 📊 评估指标说明
 
+| 指标 | 含义 | 健康区间 | 说明 |
+| :--- | :--- | :--- | :--- |
+| **U (统一性)** | 概念语义一致性 | 0.7 - 1.0 | 关键术语在文中含义是否一致 |
+| **D (发展性)** | 论证递进节奏 | 0.3 - 0.8 | 新信息引入的节奏是否合理 |
+| **A (对抗性)** | 内在矛盾密度 | 0.0 - 0.3 | 过高则自相矛盾，过低则回避矛盾 |
+| **H (和谐度)** | 综合推理健康度 | 越高越好 | H = λU·U + λD·D - λA·A |
 
-### 2. 手动监控模式
-python
-from thinkcheck import HarmonicMonitor
-
-创建监控器
-
-monitor = HarmonicMonitor(h_threshold=0.3, verbose=True)
-
-监控推理步骤
-
-h_score, needs_backtrack = monitor.add_step("第一步推理")
-if needs_backtrack:
-    print("⚠️ 推理质量下降，建议调整策略")
-
+---
 
 ## 📁 项目结构
 
-thinkcheck-lib/
-├── thinkcheck/          # 核心库
-│   ├── __init__.py
-│   ├── core.py         # 谐振理论核心算法
-│   └── decorator.py    # 装饰器实现
-├── examples/           # 使用示例
-│   └── basic_usage.py
-├── tests/              # 测试文件
-├── README.md           # 本文档
-├── LICENSE             # MIT许可证
-└── pyproject.toml      # 项目配置
-
-
-## 🔧 配置选项
-
-### thinkcheck装饰器参数
-- `h_threshold`: 和谐度阈值 (默认: 0.3)
-- `max_backtracks`: 最大回溯次数 (默认: 2)
-- `backtrack_strategy`: 回溯策略 (默认: "simple")
-- `verbose`: 显示详细信息 (默认: True)
-
-### HarmonicMonitor类参数
-- `h_threshold`: 和谐度阈值 (默认: 0.3)
-- `max_history`: 最大历史记录数 (默认: 20)
-- `verbose`: 是否显示详细信息 (默认: True)
-
-## 🤝 贡献指南
-
-欢迎贡献！请查看 [CONTRIBUTING.md](CONTRIBUTING.md) 了解详细指南。
-
-1. **报告问题**：在GitHub Issues中创建新issue
-2. **提交代码**：
-   bash
-   # Fork项目
-   # 创建特性分支
-   git checkout -b feature/AmazingFeature
-   # 提交更改
-   git commit -m 'Add some AmazingFeature'
-   # 推送到分支
-   git push origin feature/AmazingFeature
-   # 创建Pull Request
-
-
-## 📄 许可证
-
-本项目采用MIT许可证 - 详见 [LICENSE](LICENSE) 文件。
-
-## 💖 支持这个项目
-
-如果您觉得ThinkCheck对您有帮助：
-
-- ⭐ **Star这个仓库** - 这是对我们最大的支持！
-- 🔧 **报告问题** - 帮助我们改进
-- 📢 **分享给朋友** - 让更多人受益
-- 💬 **加入讨论** - 分享您的使用场景
-
-## 📞 联系我们
-
-- **GitHub Issues**: [问题讨论](https://github.com/luoxuejian000/thinkcheck-lib/issues)
-- **项目主页**: [https://github.com/luoxuejian000/thinkcheck-lib](https://github.com/luoxuejian000/thinkcheck-lib)
-
-## 🙏 致谢
-
-感谢所有为这个项目做出贡献的开发者和用户！
+```
+thinkcheck-agent-v6/
+├── main.py                    # 命令行入口
+├── config.example.yaml        # 配置文件模板
+├── requirements.txt           # 依赖清单
+├── thinkcheck_agent/          # 核心模块
+│   ├── core/
+│   │   ├── evaluator.py       # 文档评估器（ThinkCheck 封装）
+│   │   ├── actuator.py        # 调谐执行器（DeepSeek 集成）
+│   │   └── orchestration.py   # OCHR 协调器（评估→决策→执行→验证）
+│   ├── tools/
+│   │   └── file_handler.py    # 文件处理工具
+│   └── workflows/
+│       └── legal_doc_review.py # 法律文档审阅工作流
+└── thinkcheck_harmony/        # ThinkCheck 3.0 SDK（需手动放置）
+```
 
 ---
-*谐振理论让AI推理更可靠，ThinkCheck让质量监控更简单* 🚀
+
+## 🔗 相关项目
+
+| 项目 | 说明 | 链接 |
+| :--- | :--- | :--- |
+| **ThinkCheck 3.0 SDK** | 通用谐振评估引擎 | [查看](https://github.com/luoxuejian000/-thinkcheck-lib-/tree/3.0-harmony-sdk) |
+| **水晶之心** | Hermes Agent × ThinkCheck 集成版 | [查看](https://github.com/luoxuejian000/hermes-agent) |
+| **紫天鹅** | OpenClaw × ThinkCheck MCP 服务 | [查看](https://github.com/luoxuejian000/-Purple-Suan-) |
+| **OCHR 集群框架** | 多节点 AI Agent 集群治理 | [查看](https://github.com/luoxuejian000/OCHR) |
+
+---
+
+## 📄 开源许可
+
+本项目遵循 [MIT License](LICENSE)。核心评估理论基于李广好独创的**晶脉哲学与谐振理论**。
+
+---
+
+**🦢 ThinkCheck Agent — 让企业文档在矛盾中谐振，而非在盲从中国化。**
+```
