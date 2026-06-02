@@ -157,5 +157,5 @@ thinkcheck-agent-v6/
 
 ---
 
-**🦢 ThinkCheck Agent — 让企业文档在矛盾中谐振，而非在盲从中国化。**
+**🦢 ThinkCheck Agent — 让企业文档在矛盾中谐振，而非在盲从中固化。**
 ```
