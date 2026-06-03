@@ -1,0 +1,19 @@
+from setuptools import setup, find_packages
+
+setup(
+    name="thinkcheck-harmony",
+    version="3.0.0",
+    packages=find_packages(include=["thinkcheck_harmony", "thinkcheck_harmony.*"]),
+    install_requires=[
+        "sentence-transformers>=2.2.0",
+        "scikit-learn>=1.0.0",
+        "numpy>=1.20.0",
+    ],
+    author="李广好",
+    description="通用谐振评估与调谐SDK - 基于晶脉哲学",
+    url="https://github.com/luoxuejian000/-thinkcheck-lib-",
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: MIT License",
+    ],
+)
