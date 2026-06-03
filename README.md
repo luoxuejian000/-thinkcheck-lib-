@@ -167,8 +167,9 @@ thinkcheck-agent-v7/
 ## 📄 开源许可
 
 本项目遵循 [MIT License](LICENSE)。核心评估理论基于李广好独创的**晶脉哲学与谐振理论**。
+视频演示网址：https://limewire.com/d/sc8wX#QOoOwX16iS
 
 ---
 
-**🦢 ThinkCheck Agent V7 — 让企业文档在矛盾中谐振，而非在盲从中国化。**
+**🦢 ThinkCheck Agent V7 — 让企业文档在矛盾中谐振，而非在盲从中固化。**
 ```
