@@ -1,24 +1,26 @@
 """
 ThinkCheck Harmony 评估器
-支持可配置权重、长文本处理等功能
+支持可配置权重、长文本处理、审计信息记录等功能
 """
 
 import re
 from typing import Dict, List, Any, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime
 from loguru import logger
-from .metrics import calculate_harmony, get_current_weights
+from .metrics import calculate_harmony, get_current_weights, ContradictionDetector, _get_global_detector
 
 
 class HarmonyEvaluator:
     """
     文档和谐度评估器
     执行四维评估：U, D, A, H
-    支持可配置权重
+    支持可配置权重和语义模型
     """
     
     def __init__(self, domain: str = "general", enable_suggestions: bool = True,
-                 lambda_u: float = 0.4, lambda_d: float = 0.4, lambda_a: float = 0.2):
+                 lambda_u: float = 0.4, lambda_d: float = 0.4, lambda_a: float = 0.2,
+                 semantic_model=None):
         """
         初始化评估器
         
@@ -28,6 +30,7 @@ class HarmonyEvaluator:
             lambda_u: U维度权重
             lambda_d: D维度权重
             lambda_a: A维度权重
+            semantic_model: 可选的语义模型，用于句子嵌入
         """
         self.domain = domain
         self.enable_suggestions = enable_suggestions
@@ -39,6 +42,27 @@ class HarmonyEvaluator:
         self.lambda_u = lambda_u
         self.lambda_d = lambda_d
         self.lambda_a = lambda_a
+        
+        # 审计信息配置
+        self.weight_source = "default"
+        self.weight_history = []
+        
+        # 记录初始权重配置
+        self.weight_history.append({
+            "timestamp": datetime.now().isoformat(),
+            "lambda_u": self.lambda_u,
+            "lambda_d": self.lambda_d,
+            "lambda_a": self.lambda_a,
+            "source": "default"
+        })
+        
+        # 初始化矛盾检测器
+        if semantic_model:
+            # 如果提供了语义模型，创建新的检测器实例
+            self.detector = ContradictionDetector(semantic_model=semantic_model)
+        else:
+            # 否则使用全局检测器（向后兼容）
+            self.detector = _get_global_detector()
         
     def evaluate(self, text: str) -> 'HarmonyReport':
         """
@@ -208,9 +232,15 @@ class HarmonyEvaluator:
         
         return warnings
     
-    def update_weights(self, lambda_u: float = None, lambda_d: float = None, lambda_a: float = None):
+    def update_weights(self, lambda_u: float = None, lambda_d: float = None, lambda_a: float = None, source: str = "manual"):
         """
         更新权重配置
+        
+        Args:
+            lambda_u: U维度权重
+            lambda_d: D维度权重
+            lambda_a: A维度权重
+            source: 权重来源标识
         """
         if lambda_u is not None:
             self.lambda_u = lambda_u
@@ -218,16 +248,34 @@ class HarmonyEvaluator:
             self.lambda_d = lambda_d
         if lambda_a is not None:
             self.lambda_a = lambda_a
-        logger.info(f"权重已更新: U={self.lambda_u}, D={self.lambda_d}, A={self.lambda_a}")
+        
+        # 更新权重来源
+        self.weight_source = source
+        
+        # 记录权重修改历史
+        self.weight_history.append({
+            "timestamp": datetime.now().isoformat(),
+            "lambda_u": self.lambda_u,
+            "lambda_d": self.lambda_d,
+            "lambda_a": self.lambda_a,
+            "source": source
+        })
+        
+        logger.info(f"权重已更新: U={self.lambda_u}, D={self.lambda_d}, A={self.lambda_a}, source={source}")
     
     def get_audit_info(self) -> Dict[str, Any]:
         """
         获取审计信息
+        
+        Returns:
+            包含权重配置、来源和历史的完整审计信息
         """
         return {
             'lambda_u': self.lambda_u,
             'lambda_d': self.lambda_d,
             'lambda_a': self.lambda_a,
+            'weight_source': self.weight_source,
+            'weight_history': self.weight_history[-5:],  # 最近5次修改
             'default_weights': get_current_weights(),
             'domain': self.domain,
             'max_chunk_size': self.max_chunk_size
@@ -241,7 +289,7 @@ class HarmonyReport:
     
     def __init__(
         self,
-        scores: Dict[str, float],
+        scores: Dict[str, any],
         suggestions: Optional[List[str]] = None,
         warnings: Optional[List[str]] = None,
         text_length: Optional[int] = None
@@ -250,12 +298,16 @@ class HarmonyReport:
         self.suggestions = suggestions or []
         self.warnings = warnings or []
         self.text_length = text_length or 0
+        # 获取A值的详细构成（如果有）
+        self.audit = {
+            'A_detail': scores.get('A_detail', None)
+        }
     
     def to_dict(self) -> Dict[str, Any]:
         """
         转换为字典格式
         """
-        return {
+        result = {
             'U': self.scores.get('U', 0.0),
             'D': self.scores.get('D', 0.0),
             'A': self.scores.get('A', 0.0),
@@ -267,3 +319,25 @@ class HarmonyReport:
             'warnings': self.warnings,
             'text_length': self.text_length
         }
+        # 添加审计信息
+        if self.audit.get('A_detail'):
+            result['A_detail'] = self.audit['A_detail']
+        return result
+    
+    def get(self, key: str, default: any = None) -> any:
+        """
+        兼容字典访问方式的get方法
+        """
+        if key == 'harmony_report':
+            return self
+        if key in self.scores:
+            return self.scores[key]
+        if key == 'A_detail' and self.audit.get('A_detail'):
+            return self.audit['A_detail']
+        return default
+    
+    def __getitem__(self, key: str) -> any:
+        """
+        兼容字典访问方式
+        """
+        return self.get(key)
