@@ -3,12 +3,6 @@ ThinkCheck 真实功能测试
 用人类能理解的方式测试每个功能
 """
 
-import sys
-import os
-
-# 从 thinkcheck_product 目录导入
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'thinkcheck_product')))
-
 from thinkcheck import HarmonicMonitor, calculate_h_score
 import time
 

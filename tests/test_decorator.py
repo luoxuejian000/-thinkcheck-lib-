@@ -228,21 +228,22 @@ class TestRetryBacktrackExecute:
         """测试无历史记录时的重试回溯"""
         strategy = RetryBacktrack(max_retries=2)
         monitor = HarmonicMonitor(verbose=False)
-        
+
         call_count = 0
         def dummy_func():
             nonlocal call_count
             call_count += 1
             return f"结果_{call_count}"
-        
+
         history = []
         import unittest.mock
         with unittest.mock.patch('time.sleep') as mock_sleep:
             result = strategy.execute(dummy_func, (), {}, history, monitor)
-        
-        assert result is None
-        assert call_count == 2
-        assert mock_sleep.call_count == 2
+
+        # 无历史时，第一次结果的新颖性/探索性为最高，应直接返回
+        assert result == "结果_1"
+        assert call_count == 1
+        assert mock_sleep.call_count == 0
 
 class TestBacktrackTriggerInDecorator:
     """测试装饰器中的回溯触发"""
