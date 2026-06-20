@@ -1,6 +1,6 @@
 """
 ThinkCheck-lib 安装配置文件
-版本: 2.0.1
+版本: 2.1.0
 描述: 谐振理论LLM推理监控框架
 """
 
@@ -12,13 +12,13 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="thinkcheck",
-    version="2.0.1",
+    version="2.1.0",
     author="ThinkCheck Team",
     author_email="thinkcheck@example.com",
     description="谐振理论LLM推理监控框架 - 自动检测AI推理质量下降并触发回溯",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/luoxuejian000/thinkcheck-lib",
+    url="https://github.com/luoxuejian000/-thinkcheck-lib-",
     packages=find_packages(),
     classifiers=[
         "Development Status :: 4 - Beta",
@@ -46,7 +46,7 @@ setup(
     },
     keywords="llm reasoning monitoring ai harmonic quality",
     project_urls={
-        "Bug Reports": "https://github.com/luoxuejian000/thinkcheck-lib/issues",
-        "Source": "https://github.com/luoxuejian000/thinkcheck-lib",
+        "Bug Reports": "https://github.com/luoxuejian000/-thinkcheck-lib-/issues",
+        "Source": "https://github.com/luoxuejian000/-thinkcheck-lib-",
     },
 )
