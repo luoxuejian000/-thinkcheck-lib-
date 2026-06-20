@@ -27,13 +27,14 @@ def ai_math_solver(problem: str) -> str:
     key = problem.split()[0] if problem else "2+2"
     options = solutions.get(key, ["我不知道"])
     
-    # 添加一些随机性
-    if random.random() < 0.3:  # 30%概率返回低质量答案
+    # 添加一些随机性：30%低质量 / 30%重复 / 40%高质量
+    r = random.random()
+    if r < 0.3:
         return "这个...让我想想..."  # 低质量
-    elif random.random() < 0.6:  # 30%概率重复
+    elif r < 0.6:
         return options[0]  # 可能重复
-    else:  # 40%概率高质量
-        return random.choice(options)
+    else:
+        return random.choice(options)  # 高质量
 
 # 示例2：使用重试策略
 @thinkcheck_retry(h_threshold=0.5, max_backtracks=3, verbose=True)
