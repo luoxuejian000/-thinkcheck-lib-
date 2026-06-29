@@ -1,0 +1,48 @@
+# ThinkCheck Agent for Enterprise 配置文件
+# 敏感配置建议使用 .env 文件或环境变量
+
+agent:
+  name: "ThinkCheck-Agent-Enterprise"
+  version: "1.0.0"
+  log_level: "INFO"
+  log_file: "./logs/agent.log"
+
+# DeepSeek API 配置 (优先使用环境变量 DEEPSEEK_API_KEY)
+deepseek:
+  api_key: "${DEEPSEEK_API_KEY}"
+  base_url: "https://api.deepseek.com/v1"
+  model: "deepseek-chat"
+  max_tokens: 4000
+  temperature: 0.1
+  max_retries: 3
+  timeout_seconds: 30
+
+thinkcheck:
+  default_domain: "legal"
+  harmony_threshold: 0.7
+  adversarial_threshold: 0.3
+  enable_suggestions: true
+
+ochr:
+  boundary_mode: "adaptive"
+
+tools:
+  git:
+    enabled: true
+    auto_commit: false
+    commit_message_prefix: "[Agent Fix] "
+
+workflows:
+  legal_review:
+    enabled: true
+    output_format: "markdown"
+
+performance:
+  max_file_size_mb: 10
+  batch_size: 5
+  cache_enabled: true
+  cache_ttl_seconds: 3600
+
+api:
+  host: "0.0.0.0"
+  port: 8000

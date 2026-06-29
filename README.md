@@ -1,144 +1,227 @@
-# ThinkCheck-lib 🔄
+# ThinkCheck Agent for Enterprise
 
-谐振理论LLM推理监控框架 - 自动检测AI推理质量下降并触发回溯
+基于**晶脉哲学与谐振理论**的企业级文档和谐度评估与调谐系统。
 
-[![Python Version](https://img.shields.io/badge/python-3.7+-blue)](https://www.python.org/)
-[![License](https://img.shields.io/badge/license-MIT-green)](https://opensource.org/licenses/MIT)
-[![GitHub Issues](https://img.shields.io/github/issues/luoxuejian000/-thinkcheck-lib-)](https://github.com/luoxuejian000/-thinkcheck-lib-/issues)
-[![GitHub Stars](https://img.shields.io/github/stars/luoxuejian000/-thinkcheck-lib-)](https://github.com/luoxuejian000/-thinkcheck-lib-/stargazers)
-## ✨ 特性
-- 实时监控LLM推理和谐度
-- 自动检测推理质量下降
-- 智能触发回溯机制
-- 轻量级Python库，易于集成
-- 支持主流AI模型接口
-- 基于谐振理论的创新算法
+## 核心特性
 
-## 🚀 快速开始
+- 📊 **四维评估**: 统一性 (U)、发展性 (D)、对抗性 (A)、和谐度 (H)
+- 🤖 **智能调谐**: 集成 DeepSeek AI，自动优化文档
+- 🔒 **OCHR治理**: 关系映射、反思腔、边界控制
+- ⚡ **高性能**: 支持长文档分块处理、并行计算
+- 🌐 **REST API**: 完整的 API 服务
+- 📝 **命令行工具**: 简单易用的 CLI
+- 📈 **可观测性**: 完整的日志和审计
 
-### 安装
-bash
-直接从GitHub安装
+## 快速开始
 
-pip install git+https://github.com/luoxuejian000/thinkcheck-lib.git
+### 1. 安装依赖
 
+```bash
+pip install -r requirements.txt
+```
 
-## 已知问题与改进计划
+### 2. 配置环境变量
 
-当前 2.0 版本是一个**概念验证（PoC）**，存在以下已知局限，我们正在积极改进中：
+复制 `.env.example` 为 `.env` 并配置：
 
-| 问题 | 状态 | 计划版本 |
-| :--- | :--- | :--- |
-| ~~包结构与导入路径未完全对齐~~ | 🟢 **v2.0.1 已修复** | ~~v2.0.1~~ |
-| A指标可能误伤正常转折词 | 🟡 调研中 | v2.1.0 |
-| U/D指标存在启发式偏差 | 🟡 调研中 | v3.0 |
+```bash
+cp .env.example .env
+# 编辑 .env，设置 DEEPSEEK_API_KEY
+```
 
-欢迎通过 [Issues](https://github.com/luoxuejian000/-thinkcheck-lib-/issues) 提交反馈或参与讨论。
+或者配置 `config.yaml`：
 
-### 基本使用
-python
-from thinkcheck import thinkcheck
+```bash
+cp config.example.yaml config.yaml
+# 编辑 config.yaml
+```
 
-@thinkcheck(h_threshold=0.4, max_backtracks=2)
-def your_ai_function(prompt):
-    # 您的AI调用代码
-    response = call_your_llm(prompt)
-    return response
+### 3. 运行命令行工具
 
+评估文档：
 
-## 📖 详细使用
+```bash
+python main.py --file your_document.md --no-fix
+```
 
-### 1. 装饰器模式
-python
-from thinkcheck import thinkcheck_retry
+评估并修复文档：
 
-@thinkcheck_retry(h_threshold=0.5, max_backtracks=3)
-def generate_code(task_description):
-    # 您的代码生成逻辑
-    return generated_code
+```bash
+python main.py --file your_document.md
+```
 
+批量处理目录：
 
-### 2. 手动监控模式
-python
-from thinkcheck import HarmonicMonitor
+```bash
+python main.py --dir ./docs --pattern "*.md"
+```
 
-创建监控器
+### 4. 启动 API 服务
 
-monitor = HarmonicMonitor(h_threshold=0.3, verbose=True)
+```bash
+python api.py
+```
 
-监控推理步骤
+或者使用 uvicorn：
 
-h_score, needs_backtrack = monitor.add_step("第一步推理")
-if needs_backtrack:
-    print("⚠️ 推理质量下降，建议调整策略")
+```bash
+uvicorn api:app --host 0.0.0.0 --port 8000 --reload
+```
 
+访问 API 文档：http://localhost:8000/docs
 
-## 📁 项目结构
+### 5. 运行示例
 
-thinkcheck-lib/
-├── thinkcheck/          # 核心库
+```bash
+python examples/real_world_example.py
+```
+
+## 项目结构
+
+```
+thinkcheck-agent-v6/
+├── main.py                          # 命令行入口
+├── api.py                           # REST API 服务
+├── config.py                        # 配置管理
+├── requirements.txt                 # 依赖列表
+├── config.example.yaml              # 配置模板
+├── .env.example                     # 环境变量模板
+├── thinkcheck_harmony/              # 核心评估引擎
 │   ├── __init__.py
-│   ├── core.py         # 谐振理论核心算法
-│   └── decorator.py    # 装饰器实现
-├── examples/           # 使用示例
-│   └── basic_usage.py
-├── tests/              # 测试文件
-├── README.md           # 本文档
-├── LICENSE             # MIT许可证
-└── pyproject.toml      # 项目配置
+│   ├── evaluator.py                 # 评估器
+│   ├── metrics.py                   # 四维指标计算
+│   └── utils.py                     # 工具函数
+├── ochr/                            # OCHR 治理模块
+│   ├── __init__.py
+│   ├── relationship_mapper.py       # 关系映射
+│   ├── reflection_cavity.py         # 反思腔（审计）
+│   └── boundary.py                  # 边界控制
+├── thinkcheck_agent/                # Agent 核心
+│   ├── __init__.py
+│   ├── core/
+│   │   ├── __init__.py
+│   │   ├── evaluator.py             # 文档评估
+│   │   ├── actuator.py              # DeepSeek 调谐
+│   │   └── orchestration.py         # 协调器
+│   ├── tools/
+│   │   ├── __init__.py
+│   │   └── file_handler.py          # 文件处理
+│   ├── workflows/
+│   │   ├── __init__.py
+│   │   └── legal_doc_review.py      # 法律文档审阅
+│   └── examples/
+│       └── __init__.py
+├── examples/                        # 示例代码
+│   └── real_world_example.py
+├── tests/                           # 测试
+│   ├── __init__.py
+│   └── test_harmony_metrics.py
+├── logs/                            # 日志目录
+└── README.md
+```
 
+## 架构说明
 
-## 🔧 配置选项
+ThinkCheck Agent 由以下核心模块组成：
 
-### thinkcheck装饰器参数
-- `h_threshold`: 和谐度阈值 (默认: 0.3)
-- `max_backtracks`: 最大回溯次数 (默认: 2)
-- `backtrack_strategy`: 回溯策略 (默认: "simple")
-- `verbose`: 显示详细信息 (默认: True)
+### 1. thinkcheck_harmony（四维评估引擎）
 
-### HarmonicMonitor类参数
-- `h_threshold`: 和谐度阈值 (默认: 0.3)
-- `max_history`: 最大历史记录数 (默认: 20)
-- `verbose`: 是否显示详细信息 (默认: True)
+- **统一性 (U)**: 评估文档内容的一致性和连贯性
+- **发展性 (D)**: 评估文档内容的丰富度和深度
+- **对抗性 (A)**: 评估文档中的矛盾、冲突和负面内容
+- **和谐度 (H)**: 综合评分，H = 0.4U + 0.4D - 0.2A
 
-## 🤝 贡献指南
+### 2. OCHR（和谐治理模块）
 
-欢迎贡献！请查看 [CONTRIBUTING.md](CONTRIBUTING.md) 了解详细指南。
+- **RelationshipMapper**: 分析文档各部分的依赖关系
+- **ReflectionCavity**: 审计和记录文档处理过程
+- **BoundaryController**: 保护敏感内容不被修改
 
-1. **报告问题**：在GitHub Issues中创建新issue
-2. **提交代码**：
-   bash
-   # Fork项目
-   # 创建特性分支
-   git checkout -b feature/AmazingFeature
-   # 提交更改
-   git commit -m 'Add some AmazingFeature'
-   # 推送到分支
-   git push origin feature/AmazingFeature
-   # 创建Pull Request
+### 3. Actuator（DeepSeek 调谐器）
 
+使用 DeepSeek AI 根据评估结果优化文档，支持：
+- 指数退避重试
+- Token 使用统计
+- 响应格式验证
+- 结果缓存
 
-## 📄 许可证
+### 4. Orchestrator（协调器）
 
-本项目采用MIT许可证 - 详见 [LICENSE](LICENSE) 文件。
+管理完整的**评估-决策-执行-验证**闭环流程。
 
-## 💖 支持这个项目
+## API 使用
 
-如果您觉得ThinkCheck对您有帮助：
+### 评估文档
 
-- ⭐ **Star这个仓库** - 这是对我们最大的支持！
-- 🔧 **报告问题** - 帮助我们改进
-- 📢 **分享给朋友** - 让更多人受益
-- 💬 **加入讨论** - 分享您的使用场景
+```bash
+curl -X POST http://localhost:8000/evaluate \
+  -H "Content-Type: application/json" \
+  -d '{"document": "你的文档内容"}'
+```
 
-## 📞 联系我们
+### 和谐化文档
 
-- **GitHub Issues**: [问题讨论](https://github.com/luoxuejian000/thinkcheck-lib/issues)
-- **项目主页**: [https://github.com/luoxuejian000/thinkcheck-lib](https://github.com/luoxuejian000/thinkcheck-lib)
+```bash
+curl -X POST http://localhost:8000/harmonize \
+  -H "Content-Type: application/json" \
+  -d '{
+    "document": "你的文档内容",
+    "auto_fix": true
+  }'
+```
 
-## 🙏 致谢
+## 运行测试
 
-感谢所有为这个项目做出贡献的开发者和用户！
+```bash
+pytest tests/ -v
+```
 
----
-*谐振理论让AI推理更可靠，ThinkCheck让质量监控更简单* 🚀
+生成覆盖率报告：
+
+```bash
+pytest tests/ --cov=thinkcheck_harmony --cov=thinkcheck_agent --cov=ochr --cov-report=html
+```
+
+## 企业级特性
+
+### 日志系统
+
+使用 `loguru` 提供结构化日志：
+- 控制台彩色输出
+- 文件按天轮转
+- 保留7天历史
+- 自动压缩
+
+### 审计追踪
+
+所有操作都被记录到 `logs/audit/` 目录，包括：
+- 评估记录
+- 修复记录
+- 边界检查记录
+
+### 边界保护
+
+自动识别和保护：
+- 法律签字区域
+- 合同当事人信息
+- 金额信息
+- 版权声明
+
+## 贡献指南
+
+1. Fork 项目
+2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 开启 Pull Request
+
+详见 `CONTRIBUTING.md`。
+
+## 许可证
+
+MIT License
+
+## 联系方式
+
+- 项目地址: https://github.com/luoxuejian000/thinkcheck-agent-v6
+- 问题反馈: https://github.com/luoxuejian000/thinkcheck-agent-v6/issues

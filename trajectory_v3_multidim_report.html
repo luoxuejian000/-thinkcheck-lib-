@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>场域诊断可视化报告</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f7f7f8; padding: 40px 20px; color: #1d1d1f; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #1a1a2e, #16213e); color: #fff; padding: 30px 40px; border-radius: 16px; margin-bottom: 30px; }
+        .header h1 { font-size: 28px; font-weight: 600; }
+        .header .sub { font-size: 14px; color: #a0a0b0; margin-top: 8px; }
+        .header .meta { display: flex; gap: 30px; margin-top: 16px; flex-wrap: wrap; }
+        .header .meta span { font-size: 13px; color: #c0c0d0; }
+        .card { background: #fff; border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+        .card h2 { font-size: 16px; font-weight: 600; color: #1d1d1f; margin-bottom: 16px; border-bottom: 1px solid #e5e5ea; padding-bottom: 8px; }
+        .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) { .chart-grid { grid-template-columns: 1fr; } }
+        .chart-box { position: relative; height: 220px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+        .stat-item { background: #f5f5f7; padding: 12px 16px; border-radius: 8px; text-align: center; }
+        .stat-item .val { font-size: 24px; font-weight: 600; color: #1d1d1f; }
+        .stat-item .lbl { font-size: 12px; color: #8e8e93; margin-top: 4px; }
+        .footnote { text-align: center; color: #8e8e93; font-size: 12px; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e5ea; }
+        .footnote strong { color: #1d1d1f; }
+        .drift-section { margin-top: 20px; padding: 16px; background: #fafafa; border-radius: 8px; }
+        .drift-section h3 { font-size: 14px; color: #1d1d1f; margin-bottom: 12px; }
+        .drift-table { width: 100%; border-collapse: collapse; }
+        .drift-table th, .drift-table td { padding: 8px 12px; text-align: left; font-size: 13px; }
+        .drift-table th { background: #e5e5ea; color: #8e8e93; }
+        .drift-table td { border-bottom: 1px solid #e5e5ea; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>📊 场域诊断可视化报告</h1>
+        <div class="sub">纯数据呈现 · 不包含任何判定或建议</div>
+        <div class="meta">
+            <span>📄 数据点: 102</span>
+            <span>📅 生成: 2026-06-28 22:30</span>
+            <span>⚙️ 引擎: V3 Pure+ Pro</span>
+        </div>
+    </div>
+    
+    <div class="card">
+        <h2>📈 四维轨迹 (U/D/A/H)</h2>
+        <div class="chart-grid">
+            <div class="chart-box"><canvas id="chartU"></canvas></div>
+            <div class="chart-box"><canvas id="chartD"></canvas></div>
+            <div class="chart-box"><canvas id="chartA"></canvas></div>
+            <div class="chart-box"><canvas id="chartH"></canvas></div>
+        </div>
+    </div>
+    
+    <div class="card">
+        <h2>📊 数据摘要</h2>
+        <div class="stats-grid">
+            <div class="stat-item"><div class="val" id="uRange">-</div><div class="lbl">U值范围</div></div>
+            <div class="stat-item"><div class="val" id="dRange">-</div><div class="lbl">D值范围</div></div>
+            <div class="stat-item"><div class="val" id="aRange">-</div><div class="lbl">A值范围</div></div>
+            <div class="stat-item"><div class="val" id="hRange">-</div><div class="lbl">H值范围</div></div>
+            <div class="stat-item"><div class="val" id="flipCount">0</div><div class="lbl">翻转点数量</div></div>
+            <div class="stat-item"><div class="val" id="aNonZero">0%</div><div class="lbl">A值非零占比</div></div>
+        </div>
+    </div>
+    
+    <div class="card">
+        <h2>📊 一阶差分轨迹 (ΔU/ΔD/ΔA)</h2>
+        <div class="chart-grid">
+            <div class="chart-box"><canvas id="chartDeltaU"></canvas></div>
+            <div class="chart-box"><canvas id="chartDeltaD"></canvas></div>
+            <div class="chart-box"><canvas id="chartDeltaA"></canvas></div>
+            <div class="chart-box"><canvas id="chartCumulA"></canvas></div>
+        </div>
+    </div>
+    
+    <div class="footnote">
+        本报告仅呈现诊断数据，不构成任何行动建议。<br>
+        所有阈值和判定标准均应由观察者基于数据自行定义。<br>
+        <strong>判断权在您手中</strong>
+    </div>
+</div>
+
+<script>
+const data = [{"step": 0, "char_pos": 0, "U": 0.5, "D": 0.51, "A": 0.129, "H": 0.3782, "U_diff": 0.5, "D_diff": 0.51, "A_diff": 0.129, "H_diff": 0.3782, "H_driven_by": "D", "cumul_A": 0.129, "D_volatility": 0.0}, {"step": 1, "char_pos": 1500, "U": 0.5, "D": 0.51, "A": 0.0909, "H": 0.3858, "U_diff": 0.0, "D_diff": 0.0, "A_diff": -0.0381, "H_diff": 0.0076, "H_driven_by": "A", "cumul_A": 0.2199, "D_volatility": 0.0}, {"step": 2, "char_pos": 3000, "U": 0.0, "D": 0.3026, "A": 0.0909, "H": 0.1029, "U_diff": -0.5, "D_diff": -0.2074, "A_diff": 0.0, "H_diff": -0.283, "H_driven_by": "U", "cumul_A": 0.3108, "D_volatility": 0.097769}, {"step": 3, "char_pos": 4500, "U": 0.1667, "D": 0.5346, "A": 0.1818, "H": 0.2442, "U_diff": 0.1667, "D_diff": 0.232, "A_diff": 0.0909, "H_diff": 0.1413, "H_driven_by": "D", "cumul_A": 0.4926, "D_volatility": 0.093896}, {"step": 4, "char_pos": 6000, "U": 0.1562, "D": 0.8078, "A": 0.2444, "H": 0.3367, "U_diff": -0.0105, "D_diff": 0.2732, "A_diff": 0.0626, "H_diff": 0.0926, "H_driven_by": "D", "cumul_A": 0.737, "D_volatility": 0.161034}, {"step": 5, "char_pos": 7500, "U": 0.0, "D": 0.4171, "A": 0.0882, "H": 0.1492, "U_diff": -0.1562, "D_diff": -0.3907, "A_diff": -0.1562, "H_diff": -0.1875, "H_driven_by": "D", "cumul_A": 0.8252, "D_volatility": 0.153218}, {"step": 6, "char_pos": 9000, "U": 0.5, "D": 0.51, "A": 0.1389, "H": 0.3762, "U_diff": 0.5, "D_diff": 0.0929, "A_diff": 0.0507, "H_diff": 0.227, "H_driven_by": "U", "cumul_A": 0.9641, "D_volatility": 0.141858}, {"step": 7, "char_pos": 9300, "U": 0.5, "D": 0.51, "A": 0.1622, "H": 0.3716, "U_diff": 0.0, "D_diff": 0.0, "A_diff": 0.0233, "H_diff": -0.0047, "H_driven_by": "A", "cumul_A": 1.1263, "D_volatility": 0.1327}, {"step": 8, "char_pos": 9600, "U": 0.5, "D": 0.51, "A": 0.1795, "H": 0.3681, "U_diff": 0.0, "D_diff": 0.0, "A_diff": 0.0173, "H_diff": -0.0035, "H_driven_by": "A", "cumul_A": 1.3058, "D_volatility": 0.125114}, {"step": 9, "char_pos": 9900, "U": 0.5, "D": 0.51, "A": 0.1667, "H": 0.3707, "U_diff": 0.0, "D_diff": 0.0, "A_diff": -0.0128, "H_diff": 0.0026, "H_driven_by": "A", "cumul_A": 1.4725, "D_volatility": 0.118696}, {"step": 10, "char_pos": 10200, "U": 0.5, "D": 0.51, "A": 0.1667, "H": 0.3707, "U_diff": 0.0, "D_diff": 0.0, "A_diff": 0.0, "H_diff": 0.0, "H_driven_by": "均衡", "cumul_A": 1.6392, "D_volatility": 0.113174}, {"step": 11, "char_pos": 10500, "U": 0.5, "D": 0.51, "A": 0.25, "H": 0.354, "U_diff": 0.0, "D_diff": 0.0, "A_diff": 0.0833, "H_diff": -0.0167, "H_driven_by": "A", "cumul_A": 1.8892, "D_volatility": 0.108357}, {"step": 12, "char_pos": 10800, "U": 0.5, "D": 0.51, "A": 0.2059, "H": 0.3628, "U_diff": 0.0, "D_diff": 0.0, "A_diff": -0.0441, "H_diff": 0.0088, "H_driven_by": "A", "cumul_A": 2.0951, "D_volatility": 0.104107}, {"step": 13, "char_pos": 11500, "U": 0.5, "D": 0.51, "A": 0.2188, "H": 0.3602, "U_diff": 0.0, "D_diff": 0.0, "A_diff": 0.0129, "H_diff": -0.0026, "H_driven_by": "A", "cumul_A": 2.3139, "D_volatility": 0.100321}, {"step": 14, "char_pos": 13000, "U": 0.5, "D": 0.51, "A": 0.1379, "H": 0.3764, "U_diff": 0.0, "D_diff": 0.0, "A_diff": -0.0809, "H_diff": 0.0162, "H_driven_by": "A", "cumul_A": 2.4518, "D_volatility": 0.09692}, {"step": 15, "char_pos": 14100, "U": 0.1579, "D": 0.3653, "A": 0.1316, "H": 0.183, "U_diff": -0.3421, "D_diff": -0.1447, "A_diff": -0.0063, "H_diff": -0.1935, "H_driven_by": "U", "cumul_A": 2.5834, "D_volatility": 0.100291}, {"step": 16, "char_pos": 14400, "U": 0.2, "D": 0.4217, "A": 0.0682, "H": 0.235, "U_diff": 0.0421, "D_diff": 0.0564, "A_diff": -0.0634, "H_diff": 0.0521, "H_driven_by": "A", "cumul_A": 2.6516, "D_volatility": 0.09913}, {"step": 17, "char_pos": 14700, "U": 0.2059, "D": 0.4263, "A": 0.1087, "H": 0.2311, "U_diff": 0.0059, "D_diff": 0.0046, "A_diff": 0.0405, "H_diff": -0.0039, "H_driven_by": "A", "cumul_A": 2.7603, "D_volatility": 0.097711}, {"step": 18, "char_pos": 15000, "U": 0.1944, "D": 0.5757, "A": 0.0889, "H": 0.2903, "U_diff": -0.0115, "D_diff": 0.1494, "A_diff": -0.0198, "H_diff": 0.0591, "H_driven_by": "D", "cumul_A": 2.8492, "D_volatility": 0.096854}, {"step": 19, "char_pos": 15300, "U": 0.2222, "D": 0.6498, "A": 0.0909, "H": 0.3306, "U_diff": 0.0278, "D_diff": 0.0741, "A_diff": 0.002, "H_diff": 0.0404, "H_driven_by": "D", "cumul_A": 2.9401, "D_volatility": 0.100035}, {"step": 20, "char_pos": 15600, "U": 0.2222, "D": 0.6728, "A": 0.0909, "H": 0.3398, "U_diff": 0.0, "D_diff": 0.023, "A_diff": 0.0, "H_diff": 0.0092, "H_driven_by": "D", "cumul_A": 3.031, "D_volatility": 0.103919}, {"step": 21, "char_pos": 15900, "U": 0.2222, "D": 0.6715, "A": 0.0682, "H": 0.3438, "U_diff": 0.0, "D_diff": -0.0013, "A_diff": -0.0227, "H_diff": 0.004, "H_driven_by": "A", "cumul_A": 3.0992, "D_volatility": 0.10673}, {"step": 22, "char_pos": 16200, "U": 0.1875, "D": 0.6966, "A": 0.0789, "H": 0.3379, "U_diff": -0.0347, "D_diff": 0.0251, "A_diff": 0.0107, "H_diff": -0.006, "H_driven_by": "U", "cumul_A": 3.1781, "D_volatility": 0.110376}, {"step": 23, "char_pos": 16500, "U": 0.75, "D": 0.4875, "A": 0.0606, "H": 0.4829, "U_diff": 0.5625, "D_diff": -0.2091, "A_diff": -0.0183, "H_diff": 0.145, "H_driven_by": "U", "cumul_A": 3.2387, "D_volatility": 0.10836}, {"step": 24, "char_pos": 16800, "U": 0.75, "D": 0.4875, "A": 0.0909, "H": 0.4768, "U_diff": 0.0, "D_diff": 0.0, "A_diff": 0.0303, "H_diff": -0.0061, "H_driven_by": "A", "cumul_A": 3.3296, "D_volatility": 0.106447}, {"step": 25, "char_pos": 17100, "U": 0.25, "D": 1.0, "A": 0.125, "H": 0.475, "U_diff": -0.5, "D_diff": 0.5125, "A_diff": 0.0341, "H_diff": -0.0018, "H_driven_by": "D", "cumul_A": 3.4546, "D_volatility": 0.138697}, {"step": 26, "char_pos": 17400, "U": 0.0, "D": 0.3026, "A": 0.0625, "H": 0.1085, "U_diff": -0.25, "D_diff": -0.6974, "A_diff": -0.0625, "H_diff": -0.3665, "H_driven_by": "D", "cumul_A": 3.5171, "D_volatility": 0.143497}, {"step": 27, "char_pos": 17700, "U": 0.2, "D": 0.5842, "A": 0.0625, "H": 0.3012, "U_diff": 0.2, "D_diff": 0.2816, "A_diff": 0.0, "H_diff": 0.1926, "H_driven_by": "D", "cumul_A": 3.5796, "D_volatility": 0.141213}, {"step": 28, "char_pos": 18000, "U": 0.1667, "D": 0.6483, "A": 0.0625, "H": 0.3135, "U_diff": -0.0333, "D_diff": 0.0641, "A_diff": 0.0, "H_diff": 0.0123, "H_driven_by": "D", "cumul_A": 3.6421, "D_volatility": 0.140257}, {"step": 29, "char_pos": 19500, "U": 0.0714, "D": 0.8781, "A": 0.0857, "H": 0.3627, "U_diff": -0.0953, "D_diff": 0.2298, "A_diff": 0.0232, "H_diff": 0.0492, "H_driven_by": "D", "cumul_A": 3.7278, "D_volatility": 0.150659}, {"step": 30, "char_pos": 21000, "U": 0.0, "D": 1.0, "A": 0.1667, "H": 0.3667, "U_diff": -0.0714, "D_diff": 0.1219, "A_diff": 0.081, "H_diff": 0.004, "H_driven_by": "D", "cumul_A": 3.8945, "D_volatility": 0.168078}, {"step": 31, "char_pos": 22500, "U": 0.0, "D": 0.3155, "A": 0.1143, "H": 0.1033, "U_diff": 0.0, "D_diff": -0.6845, "A_diff": -0.0524, "H_diff": -0.2633, "H_driven_by": "D", "cumul_A": 4.0088, "D_volatility": 0.171067}, {"step": 32, "char_pos": 24000, "U": 0.5, "D": 0.51, "A": 0.0938, "H": 0.3852, "U_diff": 0.5, "D_diff": 0.1945, "A_diff": -0.0205, "H_diff": 0.2819, "H_driven_by": "U", "cumul_A": 4.1026, "D_volatility": 0.168656}, {"step": 33, "char_pos": 25500, "U": 0.0, "D": 0.532, "A": 0.1111, "H": 0.1906, "U_diff": -0.5, "D_diff": 0.022, "A_diff": 0.0173, "H_diff": -0.1947, "H_driven_by": "U", "cumul_A": 4.2137, "D_volatility": 0.166209}, {"step": 34, "char_pos": 27000, "U": 0.5, "D": 0.51, "A": 0.1176, "H": 0.3805, "U_diff": 0.5, "D_diff": -0.022, "A_diff": 0.0065, "H_diff": 0.1899, "H_driven_by": "U", "cumul_A": 4.3313, "D_volatility": 0.163995}, {"step": 35, "char_pos": 28500, "U": 0.5, "D": 0.51, "A": 0.1765, "H": 0.3687, "U_diff": 0.0, "D_diff": 0.0, "A_diff": 0.0589, "H_diff": -0.0118, "H_driven_by": "A", "cumul_A": 4.5078, "D_volatility": 0.161867}, {"step": 36, "char_pos": 30000, "U": 0.5, "D": 0.51, "A": 0.1143, "H": 0.3811, "U_diff": 0.0, "D_diff": 0.0, "A_diff": -0.0622, "H_diff": 0.0124, "H_driven_by": "A", "cumul_A": 4.6221, "D_volatility": 0.159818}, {"step": 37, "char_pos": 31500, "U": 0.5, "D": 0.51, "A": 0.1667, "H": 0.3707, "U_diff": 0.0, "D_diff": 0.0, "A_diff": 0.0524, "H_diff": -0.0105, "H_driven_by": "A", "cumul_A": 4.7888, "D_volatility": 0.157845}, {"step": 38, "char_pos": 33000, "U": 0.5, "D": 0.4527, "A": 0.1212, "H": 0.3568, "U_diff": 0.0, "D_diff": -0.0573, "A_diff": -0.0455, "H_diff": -0.0138, "H_driven_by": "D", "cumul_A": 4.91, "D_volatility": 0.156581}, {"step": 39, "char_pos": 34500, "U": 0.25, "D": 0.7423, "A": 0.0811, "H": 0.3807, "U_diff": -0.25, "D_diff": 0.2896, "A_diff": -0.0401, "H_diff": 0.0239, "H_driven_by": "D", "cumul_A": 4.9911, "D_volatility": 0.157545}, {"step": 40, "char_pos": 36000, "U": 0.1667, "D": 0.6479, "A": 0.1053, "H": 0.3048, "U_diff": -0.0833, "D_diff": -0.0944, "A_diff": 0.0242, "H_diff": -0.0759, "H_driven_by": "D", "cumul_A": 5.0964, "D_volatility": 0.156295}, {"step": 41, "char_pos": 37500, "U": 0.5, "D": 0.51, "A": 0.1143, "H": 0.3811, "U_diff": 0.3333, "D_diff": -0.1379, "A_diff": 0.009, "H_diff": 0.0764, "H_driven_by": "U", "cumul_A": 5.2107, "D_volatility": 0.154579}, {"step": 42, "char_pos": 39000, "U": 0.5, "D": 0.51, "A": 0.0571, "H": 0.3926, "U_diff": 0.0, "D_diff": 0.0, "A_diff": -0.0572, "H_diff": 0.0114, "H_driven_by": "A", "cumul_A": 5.2678, "D_volatility": 0.152919}, {"step": 43, "char_pos": 40500, "U": 0.5, "D": 0.51, "A": 0.0625, "H": 0.3915, "U_diff": 0.0, "D_diff": 0.0, "A_diff": 0.0054, "H_diff": -0.0011, "H_driven_by": "A", "cumul_A": 5.3303, "D_volatility": 0.15131}, {"step": 44, "char_pos": 42000, "U": 0.5, "D": 0.51, "A": 0.1622, "H": 0.3716, "U_diff": 0.0, "D_diff": 0.0, "A_diff": 0.0997, "H_diff": -0.0199, "H_driven_by": "A", "cumul_A": 5.4925, "D_volatility": 0.14975}, {"step": 45, "char_pos": 43500, "U": 0.5, "D": 0.51, "A": 0.1212, "H": 0.3798, "U_diff": 0.0, "D_diff": 0.0, "A_diff": -0.041, "H_diff": 0.0082, "H_driven_by": "A", "cumul_A": 5.6137, "D_volatility": 0.148238}, {"step": 46, "char_pos": 45000, "U": 0.5, "D": 0.51, "A": 0.0645, "H": 0.3911, "U_diff": 0.0, "D_diff": 0.0, "A_diff": -0.0567, "H_diff": 0.0113, "H_driven_by": "A", "cumul_A": 5.6782, "D_volatility": 0.14677}, {"step": 47, "char_pos": 46500, "U": 0.5, "D": 0.51, "A": 0.1429, "H": 0.3754, "U_diff": 0.0, "D_diff": 0.0, "A_diff": 0.0784, "H_diff": -0.0157, "H_driven_by": "A", "cumul_A": 5.8211, "D_volatility": 0.145344}, {"step": 48, "char_pos": 48000, "U": 0.5, "D": 0.51, "A": 0.0909, "H": 0.3858, "U_diff": 0.0, "D_diff": 0.0, "A_diff": -0.052, "H_diff": 0.0104, "H_driven_by": "A", "cumul_A": 5.912, "D_volatility": 0.143959}, {"step": 49, "char_pos": 49500, "U": 0.5, "D": 0.51, "A": 0.0882, "H": 0.3864, "U_diff": 0.0, "D_diff": 0.0, "A_diff": -0.0027, "H_diff": 0.0005, "H_driven_by": "均衡", "cumul_A": 6.0002, "D_volatility": 0.142612}, {"step": 50, "char_pos": 51000, "U": 0.0, "D": 0.384, "A": 0.1515, "H": 0.1233, "U_diff": -0.5, "D_diff": -0.126, "A_diff": 0.0633, "H_diff": -0.2631, "H_driven_by": "U", "cumul_A": 6.1517, "D_volatility": 0.143013}, {"step": 51, "char_pos": 52500, "U": 0.0, "D": 0.8134, "A": 0.0882, "H": 0.3077, "U_diff": 0.0, "D_diff": 0.4294, "A_diff": -0.0633, "H_diff": 0.1844, "H_driven_by": "D", "cumul_A": 6.2399, "D_volatility": 0.146377}, {"step": 52, "char_pos": 54000, "U": 0.0, "D": 0.7034, "A": 0.1176, "H": 0.2578, "U_diff": 0.0, "D_diff": -0.11, "A_diff": 0.0294, "H_diff": -0.0499, "H_driven_by": "D", "cumul_A": 6.3575, "D_volatility": 0.146496}, {"step": 53, "char_pos": 55500, "U": 0.3636, "D": 0.6276, "A": 0.1143, "H": 0.3736, "U_diff": 0.3636, "D_diff": -0.0758, "A_diff": -0.0033, "H_diff": 0.1158, "H_driven_by": "U", "cumul_A": 6.4718, "D_volatility": 0.145488}, {"step": 54, "char_pos": 56200, "U": 0.3636, "D": 0.5079, "A": 0.0882, "H": 0.331, "U_diff": 0.0, "D_diff": -0.1197, "A_diff": -0.0261, "H_diff": -0.0427, "H_driven_by": "D", "cumul_A": 6.56, "D_volatility": 0.144289}, {"step": 55, "char_pos": 56500, "U": 0.25, "D": 0.4634, "A": 0.0938, "H": 0.2666, "U_diff": -0.1136, "D_diff": -0.0445, "A_diff": 0.0056, "H_diff": -0.0644, "H_driven_by": "U", "cumul_A": 6.6538, "D_volatility": 0.143485}, {"step": 56, "char_pos": 56800, "U": 0.0556, "D": 0.3593, "A": 0.0968, "H": 0.1466, "U_diff": -0.1944, "D_diff": -0.1041, "A_diff": 0.003, "H_diff": -0.12, "H_driven_by": "U", "cumul_A": 6.7506, "D_volatility": 0.144436}, {"step": 57, "char_pos": 57100, "U": 0.5, "D": 0.51, "A": 0.1212, "H": 0.3798, "U_diff": 0.4444, "D_diff": 0.1507, "A_diff": 0.0244, "H_diff": 0.2332, "H_driven_by": "U", "cumul_A": 6.8718, "D_volatility": 0.14327}, {"step": 58, "char_pos": 57400, "U": 0.5, "D": 0.51, "A": 0.129, "H": 0.3782, "U_diff": 0.0, "D_diff": 0.0, "A_diff": 0.0078, "H_diff": -0.0016, "H_driven_by": "A", "cumul_A": 7.0008, "D_volatility": 0.142132}, {"step": 59, "char_pos": 57700, "U": 0.5, "D": 0.51, "A": 0.129, "H": 0.3782, "U_diff": 0.0, "D_diff": 0.0, "A_diff": 0.0, "H_diff": 0.0, "H_driven_by": "均衡", "cumul_A": 7.1298, "D_volatility": 0.141021}, {"step": 60, "char_pos": 58000, "U": 0.5, "D": 0.51, "A": 0.1765, "H": 0.3687, "U_diff": 0.0, "D_diff": 0.0, "A_diff": 0.0475, "H_diff": -0.0095, "H_driven_by": "A", "cumul_A": 7.3063, "D_volatility": 0.139934}, {"step": 61, "char_pos": 59500, "U": 0.4, "D": 0.5697, "A": 0.1944, "H": 0.349, "U_diff": -0.1, "D_diff": 0.0597, "A_diff": 0.0179, "H_diff": -0.0197, "H_driven_by": "U", "cumul_A": 7.5007, "D_volatility": 0.138835}, {"step": 62, "char_pos": 61000, "U": 0.5, "D": 0.6854, "A": 0.1081, "H": 0.4525, "U_diff": 0.1, "D_diff": 0.1157, "A_diff": -0.0863, "H_diff": 0.1035, "H_driven_by": "D", "cumul_A": 7.6088, "D_volatility": 0.13883}, {"step": 63, "char_pos": 62500, "U": 0.5, "D": 0.51, "A": 0.0333, "H": 0.3973, "U_diff": 0.0, "D_diff": -0.1754, "A_diff": -0.0748, "H_diff": -0.0552, "H_driven_by": "D", "cumul_A": 7.6421, "D_volatility": 0.137822}, {"step": 64, "char_pos": 64000, "U": 0.5, "D": 0.51, "A": 0.0968, "H": 0.3846, "U_diff": 0.0, "D_diff": 0.0, "A_diff": 0.0635, "H_diff": -0.0127, "H_driven_by": "A", "cumul_A": 7.7389, "D_volatility": 0.136835}, {"step": 65, "char_pos": 65500, "U": 0.5, "D": 0.51, "A": 0.0938, "H": 0.3852, "U_diff": 0.0, "D_diff": 0.0, "A_diff": -0.003, "H_diff": 0.0006, "H_driven_by": "均衡", "cumul_A": 7.8327, "D_volatility": 0.135869}, {"step": 66, "char_pos": 67000, "U": 0.5, "D": 0.51, "A": 0.0625, "H": 0.3915, "U_diff": 0.0, "D_diff": 0.0, "A_diff": -0.0313, "H_diff": 0.0063, "H_driven_by": "A", "cumul_A": 7.8952, "D_volatility": 0.134923}, {"step": 67, "char_pos": 68500, "U": 0.5, "D": 0.51, "A": 0.1, "H": 0.384, "U_diff": 0.0, "D_diff": 0.0, "A_diff": 0.0375, "H_diff": -0.0075, "H_driven_by": "A", "cumul_A": 7.9952, "D_volatility": 0.133996}, {"step": 68, "char_pos": 70000, "U": 0.0, "D": 0.3031, "A": 0.1429, "H": 0.0927, "U_diff": -0.5, "D_diff": -0.2069, "A_diff": 0.0429, "H_diff": -0.2913, "H_driven_by": "U", "cumul_A": 8.1381, "D_volatility": 0.136132}, {"step": 69, "char_pos": 71500, "U": 0.0, "D": 0.3031, "A": 0.1818, "H": 0.0849, "U_diff": 0.0, "D_diff": 0.0, "A_diff": 0.0389, "H_diff": -0.0078, "H_driven_by": "A", "cumul_A": 8.3199, "D_volatility": 0.13809}, {"step": 70, "char_pos": 73000, "U": 0.5, "D": 0.51, "A": 0.1562, "H": 0.3728, "U_diff": 0.5, "D_diff": 0.2069, "A_diff": -0.0256, "H_diff": 0.2879, "H_driven_by": "U", "cumul_A": 8.4761, "D_volatility": 0.137155}, {"step": 71, "char_pos": 74500, "U": 0.5, "D": 0.51, "A": 0.125, "H": 0.379, "U_diff": 0.0, "D_diff": 0.0, "A_diff": -0.0312, "H_diff": 0.0062, "H_driven_by": "A", "cumul_A": 8.6011, "D_volatility": 0.136238}, {"step": 72, "char_pos": 76000, "U": 0.5, "D": 0.51, "A": 0.1765, "H": 0.3687, "U_diff": 0.0, "D_diff": 0.0, "A_diff": 0.0515, "H_diff": -0.0103, "H_driven_by": "A", "cumul_A": 8.7776, "D_volatility": 0.13534}, {"step": 73, "char_pos": 77500, "U": 0.5, "D": 0.51, "A": 0.1765, "H": 0.3687, "U_diff": 0.0, "D_diff": 0.0, "A_diff": 0.0, "H_diff": 0.0, "H_driven_by": "均衡", "cumul_A": 8.9541, "D_volatility": 0.134459}, {"step": 74, "char_pos": 79000, "U": 0.5, "D": 0.51, "A": 0.129, "H": 0.3782, "U_diff": 0.0, "D_diff": 0.0, "A_diff": -0.0475, "H_diff": 0.0095, "H_driven_by": "A", "cumul_A": 9.0831, "D_volatility": 0.133594}, {"step": 75, "char_pos": 80500, "U": 0.5, "D": 0.51, "A": 0.0333, "H": 0.3973, "U_diff": 0.0, "D_diff": 0.0, "A_diff": -0.0957, "H_diff": 0.0191, "H_driven_by": "A", "cumul_A": 9.1164, "D_volatility": 0.132747}, {"step": 76, "char_pos": 82000, "U": 0.5, "D": 0.51, "A": 0.1875, "H": 0.3665, "U_diff": 0.0, "D_diff": 0.0, "A_diff": 0.1542, "H_diff": -0.0308, "H_driven_by": "A", "cumul_A": 9.3039, "D_volatility": 0.131915}, {"step": 77, "char_pos": 83500, "U": 0.5, "D": 0.51, "A": 0.1724, "H": 0.3695, "U_diff": 0.0, "D_diff": 0.0, "A_diff": -0.0151, "H_diff": 0.003, "H_driven_by": "A", "cumul_A": 9.4763, "D_volatility": 0.131098}, {"step": 78, "char_pos": 85000, "U": 0.5, "D": 0.51, "A": 0.129, "H": 0.3782, "U_diff": 0.0, "D_diff": 0.0, "A_diff": -0.0434, "H_diff": 0.0087, "H_driven_by": "A", "cumul_A": 9.6053, "D_volatility": 0.130297}, {"step": 79, "char_pos": 86500, "U": 0.5, "D": 0.51, "A": 0.125, "H": 0.379, "U_diff": 0.0, "D_diff": 0.0, "A_diff": -0.004, "H_diff": 0.0008, "H_driven_by": "均衡", "cumul_A": 9.7303, "D_volatility": 0.12951}, {"step": 80, "char_pos": 88000, "U": 0.5, "D": 0.51, "A": 0.1, "H": 0.384, "U_diff": 0.0, "D_diff": 0.0, "A_diff": -0.025, "H_diff": 0.005, "H_driven_by": "A", "cumul_A": 9.8303, "D_volatility": 0.128737}, {"step": 81, "char_pos": 89500, "U": 0.5, "D": 0.51, "A": 0.0333, "H": 0.3973, "U_diff": 0.0, "D_diff": 0.0, "A_diff": -0.0667, "H_diff": 0.0133, "H_driven_by": "A", "cumul_A": 9.8636, "D_volatility": 0.127978}, {"step": 82, "char_pos": 91000, "U": 0.5, "D": 0.51, "A": 0.0645, "H": 0.3911, "U_diff": 0.0, "D_diff": 0.0, "A_diff": 0.0312, "H_diff": -0.0062, "H_driven_by": "A", "cumul_A": 9.9281, "D_volatility": 0.127232}, {"step": 83, "char_pos": 92500, "U": 0.5, "D": 0.51, "A": 0.069, "H": 0.3902, "U_diff": 0.0, "D_diff": 0.0, "A_diff": 0.0045, "H_diff": -0.0009, "H_driven_by": "均衡", "cumul_A": 9.9971, "D_volatility": 0.126499}, {"step": 84, "char_pos": 94000, "U": 0.5, "D": 0.51, "A": 0.1613, "H": 0.3717, "U_diff": 0.0, "D_diff": 0.0, "A_diff": 0.0923, "H_diff": -0.0185, "H_driven_by": "A", "cumul_A": 10.1584, "D_volatility": 0.125778}, {"step": 85, "char_pos": 95500, "U": 0.5, "D": 0.51, "A": 0.0303, "H": 0.3979, "U_diff": 0.0, "D_diff": 0.0, "A_diff": -0.131, "H_diff": 0.0262, "H_driven_by": "A", "cumul_A": 10.1887, "D_volatility": 0.12507}, {"step": 86, "char_pos": 97000, "U": 0.5, "D": 0.51, "A": 0.0645, "H": 0.3911, "U_diff": 0.0, "D_diff": 0.0, "A_diff": 0.0342, "H_diff": -0.0068, "H_driven_by": "A", "cumul_A": 10.2532, "D_volatility": 0.124373}, {"step": 87, "char_pos": 98500, "U": 0.5, "D": 0.51, "A": 0.0938, "H": 0.3852, "U_diff": 0.0, "D_diff": 0.0, "A_diff": 0.0293, "H_diff": -0.0059, "H_driven_by": "A", "cumul_A": 10.347, "D_volatility": 0.123688}, {"step": 88, "char_pos": 100000, "U": 0.5, "D": 0.51, "A": 0.125, "H": 0.379, "U_diff": 0.0, "D_diff": 0.0, "A_diff": 0.0312, "H_diff": -0.0062, "H_driven_by": "A", "cumul_A": 10.472, "D_volatility": 0.123014}, {"step": 89, "char_pos": 101500, "U": 0.5, "D": 0.51, "A": 0.125, "H": 0.379, "U_diff": 0.0, "D_diff": 0.0, "A_diff": 0.0, "H_diff": 0.0, "H_driven_by": "均衡", "cumul_A": 10.597, "D_volatility": 0.122351}, {"step": 90, "char_pos": 103000, "U": 0.5, "D": 0.51, "A": 0.0968, "H": 0.3846, "U_diff": 0.0, "D_diff": 0.0, "A_diff": -0.0282, "H_diff": 0.0056, "H_driven_by": "A", "cumul_A": 10.6938, "D_volatility": 0.121698}, {"step": 91, "char_pos": 104500, "U": 0.5, "D": 0.51, "A": 0.129, "H": 0.3782, "U_diff": 0.0, "D_diff": 0.0, "A_diff": 0.0322, "H_diff": -0.0064, "H_driven_by": "A", "cumul_A": 10.8228, "D_volatility": 0.121056}, {"step": 92, "char_pos": 106000, "U": 0.5, "D": 0.51, "A": 0.1818, "H": 0.3676, "U_diff": 0.0, "D_diff": 0.0, "A_diff": 0.0528, "H_diff": -0.0106, "H_driven_by": "A", "cumul_A": 11.0046, "D_volatility": 0.120424}, {"step": 93, "char_pos": 107500, "U": 0.5, "D": 0.51, "A": 0.1765, "H": 0.3687, "U_diff": 0.0, "D_diff": 0.0, "A_diff": -0.0053, "H_diff": 0.0011, "H_driven_by": "A", "cumul_A": 11.1811, "D_volatility": 0.119802}, {"step": 94, "char_pos": 109000, "U": 0.5, "D": 0.51, "A": 0.1212, "H": 0.3798, "U_diff": 0.0, "D_diff": 0.0, "A_diff": -0.0553, "H_diff": 0.0111, "H_driven_by": "A", "cumul_A": 11.3023, "D_volatility": 0.119189}, {"step": 95, "char_pos": 110500, "U": 0.5, "D": 0.51, "A": 0.1429, "H": 0.3754, "U_diff": 0.0, "D_diff": 0.0, "A_diff": 0.0217, "H_diff": -0.0043, "H_driven_by": "A", "cumul_A": 11.4452, "D_volatility": 0.118586}, {"step": 96, "char_pos": 112000, "U": 0.5, "D": 0.51, "A": 0.0667, "H": 0.3907, "U_diff": 0.0, "D_diff": 0.0, "A_diff": -0.0762, "H_diff": 0.0152, "H_driven_by": "A", "cumul_A": 11.5119, "D_volatility": 0.117991}, {"step": 97, "char_pos": 113500, "U": 0.5, "D": 0.51, "A": 0.0968, "H": 0.3846, "U_diff": 0.0, "D_diff": 0.0, "A_diff": 0.0301, "H_diff": -0.006, "H_driven_by": "A", "cumul_A": 11.6087, "D_volatility": 0.117405}, {"step": 98, "char_pos": 115000, "U": 0.5, "D": 0.51, "A": 0.0909, "H": 0.3858, "U_diff": 0.0, "D_diff": 0.0, "A_diff": -0.0059, "H_diff": 0.0012, "H_driven_by": "A", "cumul_A": 11.6996, "D_volatility": 0.116828}, {"step": 99, "char_pos": 116500, "U": 0.5, "D": 0.51, "A": 0.0333, "H": 0.3973, "U_diff": 0.0, "D_diff": 0.0, "A_diff": -0.0576, "H_diff": 0.0115, "H_driven_by": "A", "cumul_A": 11.7329, "D_volatility": 0.11626}, {"step": 100, "char_pos": 117500, "U": 0.5, "D": 0.51, "A": 0.0741, "H": 0.3892, "U_diff": 0.0, "D_diff": 0.0, "A_diff": 0.0408, "H_diff": -0.0082, "H_driven_by": "A", "cumul_A": 11.807, "D_volatility": 0.1157}, {"step": 101, "char_pos": 119000, "U": 0.5, "D": 0.39, "A": 0.2, "H": 0.316, "U_diff": 0.0, "D_diff": -0.12, "A_diff": 0.1259, "H_diff": -0.0732, "H_driven_by": "A", "cumul_A": 12.007, "D_volatility": 0.11595}];
+const steps = data.map(d => d.step || d.char_pos || 0);
+const u = data.map(d => d.U || 0);
+const d = data.map(d => d.D || 0);
+const a = data.map(d => d.A || 0);
+const h = data.map(d => d.H || 0);
+const uDiff = data.map(d => d.U_diff || 0);
+const dDiff = data.map(d => d.D_diff || 0);
+const aDiff = data.map(d => d.A_diff || 0);
+const cumulA = data.map(d => d.cumul_A || 0);
+
+function createChart(id, label, values, color) {
+    const ctx = document.getElementById(id).getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: steps,
+            datasets: [ {
+                label: label,
+                data: values,
+                borderColor: color,
+                backgroundColor: color + '22',
+                fill: true,
+                tension: 0.3,
+                pointRadius: 2,
+                pointBackgroundColor: color,
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            return ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(3);
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: { min: 0, max: 1, ticks: { stepSize: 0.2 } },
+                x: { display: false }
+            }
+        }
+    });
+}
+
+function createDiffChart(id, label, values, color) {
+    const ctx = document.getElementById(id).getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: steps,
+            datasets: [ {
+                label: label,
+                data: values,
+                borderColor: color,
+                backgroundColor: color + '22',
+                fill: true,
+                tension: 0.3,
+                pointRadius: 2,
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            return ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(3);
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: { display: false }
+            }
+        }
+    });
+}
+
+// 创建四维轨迹图
+createChart('chartU', 'U值', u, '#3b82f6');
+createChart('chartD', 'D值', d, '#10b981');
+createChart('chartA', 'A值', a, '#f59e0b');
+createChart('chartH', 'H值', h, '#8b5cf6');
+
+// 创建一阶差分图
+createDiffChart('chartDeltaU', 'ΔU', uDiff, '#3b82f6');
+createDiffChart('chartDeltaD', 'ΔD', dDiff, '#10b981');
+createDiffChart('chartDeltaA', 'ΔA', aDiff, '#f59e0b');
+createDiffChart('chartCumulA', 'ΣA累积', cumulA, '#ef4444');
+
+// 计算数据摘要
+const uMin = Math.min(...u).toFixed(3);
+const uMax = Math.max(...u).toFixed(3);
+const dMin = Math.min(...d).toFixed(3);
+const dMax = Math.max(...d).toFixed(3);
+const aMin = Math.min(...a).toFixed(3);
+const aMax = Math.max(...a).toFixed(3);
+const hMin = Math.min(...h).toFixed(3);
+const hMax = Math.max(...h).toFixed(3);
+
+const aNonZeroCount = a.filter(v => v > 0.001).length;
+const aNonZeroPct = ((aNonZeroCount / a.length) * 100).toFixed(1);
+
+// 更新统计卡片
+document.getElementById('uRange').textContent = uMin + ' - ' + uMax;
+document.getElementById('dRange').textContent = dMin + ' - ' + dMax;
+document.getElementById('aRange').textContent = aMin + ' - ' + aMax;
+document.getElementById('hRange').textContent = hMin + ' - ' + hMax;
+document.getElementById('aNonZero').textContent = aNonZeroPct + '%';
+</script>
+</body>
+</html>
