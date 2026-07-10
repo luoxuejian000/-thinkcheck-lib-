@@ -12,7 +12,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="thinkcheck",
-    version="2.0.1",
+    version="2.1.0",
     author="ThinkCheck Team",
     author_email="thinkcheck@example.com",
     description="谐振理论LLM推理监控框架 - 自动检测AI推理质量下降并触发回溯",
