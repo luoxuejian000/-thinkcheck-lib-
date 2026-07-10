@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "thinkcheck"
-version = "2.0.1"
+version = "2.1.0"
 description = "谐振理论LLM推理监控框架 - 自动检测AI推理质量下降并触发回溯"
 readme = "README.md"
 license = {text = "MIT"}
@@ -39,10 +39,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/luoxuejian000/thinkcheck-lib"
-Documentation = "https://github.com/luoxuejian000/thinkcheck-lib#readme"
-Repository = "https://github.com/luoxuejian000/thinkcheck-lib"
-Issues = "https://github.com/luoxuejian000/thinkcheck-lib/issues"
+Homepage = "https://github.com/luoxuejian000/-thinkcheck-lib-"
+Documentation = "https://github.com/luoxuejian000/-thinkcheck-lib-#readme"
+Repository = "https://github.com/luoxuejian000/-thinkcheck-lib-"
+Issues = "https://github.com/luoxuejian000/-thinkcheck-lib-/issues"
 
 [tool.setuptools]
 packages = ["thinkcheck"]

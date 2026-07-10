@@ -1,0 +1,7 @@
+include README.md
+include LICENSE
+include CHANGELOG.md
+include CONTRIBUTING.md
+include requirements-dev.txt
+recursive-include examples *.py
+recursive-include tests *.py
